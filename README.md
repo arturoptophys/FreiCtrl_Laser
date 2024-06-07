@@ -1,1 +1,20 @@
 # FreiCtrl_Laser
+python tools to aid in working with our future datastructure
+
+
+if you have git installed:
+	
+	git clone https://github.com/arturoptophys/FreiCtrl_Laser.git
+	cd FreiCtrl_Laser
+
+Install the module with required packages, ideally from a conda env. 
+run inside DataStructure_tools
+
+    conda create -n FreiCtrl_Laser python=3.11
+    conda activate FreiCtrl_Laser
+    
+    pip install -e .
+
+
+## User Guide
+![GUI.PNG](docs/GUI.PNG)
