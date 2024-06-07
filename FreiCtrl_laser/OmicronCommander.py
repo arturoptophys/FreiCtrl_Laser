@@ -8,7 +8,6 @@ from threading import Thread, Event
 from queue import Queue, PriorityQueue
 import logging
 
-import numpy as np
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QRect
 
