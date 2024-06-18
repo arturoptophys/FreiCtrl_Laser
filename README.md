@@ -8,7 +8,7 @@ if you have git installed:
 	cd FreiCtrl_Laser
 
 Install the module with required packages, ideally from a conda env. 
-run inside DataStructure_tools
+run inside FreiCtrl_Laser
 
     conda create -n FreiCtrl_Laser python=3.11
     conda activate FreiCtrl_Laser
@@ -18,3 +18,6 @@ run inside DataStructure_tools
 
 ## User Guide
 ![GUI.PNG](docs/GUI.PNG)
+
+## Documentation
+[documentation.md](documentation/documentation.md)
