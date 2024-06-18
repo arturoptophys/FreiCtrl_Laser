@@ -1,7 +1,6 @@
 # FreiCtrl_Laser
-python tools to aid in working with our future datastructure
 
-
+## Installation
 if you have git installed:
 	
 	git clone https://github.com/arturoptophys/FreiCtrl_Laser.git
@@ -17,7 +16,7 @@ run inside FreiCtrl_Laser
 
 
 ## User Guide
-![GUI.PNG](docs/GUI.PNG)
+[user_guide.md](docs/user_guide.md)
 
 ## Documentation
 [documentation.md](documentation/documentation.md)

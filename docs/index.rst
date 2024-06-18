@@ -6,6 +6,7 @@ Welcome to SpikeGLX-remoteCTRL's documentation!
 
    readme.md
    documentation.md
+   user_guide.md
    api.md
 
 
