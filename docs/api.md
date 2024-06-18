@@ -1,6 +1,6 @@
 # API reference
 
-## SpikeGLX-remoteCTRL
+## FreiCtrl laser
 
 ```{eval-rst}
 .. automodule:: FreiCtrl_laser.host_utils

@@ -1,4 +1,4 @@
-Welcome to SpikeGLX-remoteCTRL's documentation!
+Welcome to FreiCtrl_laser documentation!
 ============================================
 .. toctree::
    :maxdepth: 2

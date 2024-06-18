@@ -1,2 +1,2 @@
 ## User Guide
-![GUI.PNG](GUI.PNG)
+![GUI.PNG](../docs/_static/GUI.PNG)

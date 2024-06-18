@@ -16,7 +16,7 @@ run inside FreiCtrl_Laser
 
 
 ## User Guide
-[user_guide.md](docs/user_guide.md)
+[user_guide.md](documentation/user_guide.md)
 
 ## Documentation
 [documentation.md](documentation/documentation.md)
