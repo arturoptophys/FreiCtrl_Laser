@@ -24,9 +24,7 @@ VERSION = "0.1.2"
 
 LASER_MODES = ['Standby', "CW-ACC", "CW-APC", "Analog"]
 
-# TODO if called from main allow closing
-# if called from main less often update
-# catch errors!
+
 class MySwitch(QPushButton):
     def __init__(self, parent=None):
         super().__init__(parent)
