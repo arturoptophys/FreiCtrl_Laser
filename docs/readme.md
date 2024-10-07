@@ -1,2 +1,1 @@
-```{include} ../README.md
-```
+Write some readme content here.

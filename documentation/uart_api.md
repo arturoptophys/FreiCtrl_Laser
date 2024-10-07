@@ -1,6 +1,9 @@
 ## Using UART to send parameters and trigger FreiLaser-board
 
-The parameters can be sent to FreiLaser via serial/UART. The parameters are transmitted as a JavaScript Object Notation (JSON) dictionary followed by a line-break character. This enables FreiLaser to operate in fully autonomous mode (\figref{fig:operating_principles}\textbf{C}), where another system sets the stimulation parameters and controls the mask and trigger signals. Ideally, this system also controls the behavioral task, allowing synchronization of events \cite{FENSposter}.
+The parameters can be sent to FreiLaser via serial/UART. The parameters are transmitted as a JavaScript Object Notation 
+(JSON) dictionary followed by a line-break character. This enables FreiLaser to operate in fully autonomous mode, where 
+another system sets the stimulation parameters and controls the mask and trigger signals. Ideally, this system also 
+controls the behavioral task, allowing synchronization of events.
 
 Example how to send parameters in Python:
 
