@@ -5,8 +5,11 @@ Welcome to FreiCtrl_laser documentation!
    :caption: Contents:
 
    readme.md
-   documentation.md
+   installation.md
+   hardware_circuits.md
    user_guide.md
+   gui.md
+   uart_api.md
    api.md
 
 
