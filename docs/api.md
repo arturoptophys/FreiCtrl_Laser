@@ -3,6 +3,8 @@
 ## FreiCtrl laser
 
 ```{eval-rst}
+.. automodule:: FreiCtrl_laser.GuiLaser
+   :members:
 .. automodule:: FreiCtrl_laser.host_utils
    :members:
 .. automodule:: FreiCtrl_laser.luxx_communication
@@ -13,5 +15,4 @@
    :members:
 .. automodule:: FreiCtrl_laser.socket_utils
    :members:
-
 ```
