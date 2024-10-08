@@ -2,21 +2,25 @@
 
 ### GUI installation 
 if you have git installed:
-	
-	git clone https://github.com/arturoptophys/FreiCtrl_Laser.git
-	cd FreiCtrl_Laser
-
+```bash
+git clone https://github.com/arturoptophys/FreiCtrl_Laser.git
+cd FreiCtrl_Laser
+```
 Install the module with required packages, ideally from a conda env. 
 run inside FreiCtrl_Laser
 
-    conda create -n FreiCtrl_Laser python=3.11
-    conda activate FreiCtrl_Laser
-    
-    pip install -e .
+```bash
+conda create -n FreiCtrl_Laser python=3.11
+conda activate FreiCtrl_Laser
+
+pip install -e .
+```
 
 To start the GUI, run the following command:
 
-    python FreiCtrl_laser/GuiLaser.py
+```bash
+python FreiCtrl_laser/GuiLaser.py
+```
 
 ### CircuitPython installation
 Please install CircuitPython firmware on your pico board according to instructions (https://circuitpython.org/board/raspberry_pi_pico/). 

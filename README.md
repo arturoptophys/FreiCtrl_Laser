@@ -1,6 +1,5 @@
 # FreiCtrl_Laser
-![Abstract](/docs/_static/HillYMaze_board-09.PNG)
-
+![Abstract](docs/_static/HillYMaze_board-09.png)
 Here we present a flexible, low-cost system based on the Raspberry Pi Pico microcontroller board
 running CircuitPython. Designed for use in optogenetic experiments within behavioral paradigms, it can control
 up to four lasers simultaneously through both analog and digital channels. 
@@ -11,6 +10,7 @@ Interface [(API)](documentation/uart_api.md).
 Built-in mask controller automatically generates signals to drive masking LEDs, preventing animals from associating
 the laser with a visual cue. 
 
+Read the [documentation](https://arturoptophys.github.io/FreiCtrl_Laser/).
 
 ## Installation
 [Installation](documentation/installation.md)
@@ -19,7 +19,7 @@ the laser with a visual cue.
 [Build instructions](documentation/hardware_circuits)
 
 ## Usage
-[User guider](documentation/user_guide.md)
+[User guide](documentation/user_guide.md)
 
 
 
