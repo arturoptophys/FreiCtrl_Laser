@@ -1,0 +1,2 @@
+```{include} ../documentation/gui.md
+```
