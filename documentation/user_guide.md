@@ -1,2 +1,2 @@
 ## User Guide
-![GUI.PNG](../docs/_static/GUI.PNG)
+![User Guide](../docs/_static/HillYMaze_board-02.png)

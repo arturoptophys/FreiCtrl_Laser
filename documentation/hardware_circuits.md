@@ -1,5 +1,7 @@
 ### Circuits
 #### LaserCtrl circuit diagram
-![HillYMaze_board-02.png](../docs/_static/HillYMaze_board-02.png)
+![HillYMaze_board-02.png](../docs/_static/HillYMaze_board-12.png)
+
+![Complete board](../docs/_static/HillYMaze_board-10.png)
 #### MaskLED driving circuit
-![HillYMaze_board-03.png](../docs/_static/HillYMaze_board-03.png)
+![Mask circuit](../docs/_static/HillYMaze_board-11.png)
