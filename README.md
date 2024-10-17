@@ -16,7 +16,7 @@ Read the [documentation](https://arturoptophys.github.io/FreiCtrl_Laser/).
 [Installation](documentation/installation.md)
 
 ## Hardware and build instructions
-[Build instructions](documentation/hardware_circuits)
+[Build instructions](documentation/hardware_circuits.md)
 
 ## Usage
 [User guide](documentation/user_guide.md)

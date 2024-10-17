@@ -9,7 +9,7 @@
 project = 'FreiCtrl_laser'
 copyright = '2024, Artur Schneider (Optophysiology, University Freiburg)'
 author = 'Artur'
-release = '0.0.0'
+release = '1.0.0'
 
 import os
 import sys
