@@ -1,4 +1,6 @@
 # FreiCtrl_Laser
+[![DOI](https://zenodo.org/badge/811759609.svg)](https://doi.org/10.5281/zenodo.13944586)
+
 ![Abstract](docs/_static/HillYMaze_board-09.png)
 Here we present a flexible, low-cost system based on the Raspberry Pi Pico microcontroller board
 running CircuitPython. Designed for use in optogenetic experiments within behavioral paradigms, it can control
