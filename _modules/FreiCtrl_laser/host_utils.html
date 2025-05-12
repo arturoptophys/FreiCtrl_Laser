@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FreiCtrl_laser.host_utils &#8212; FreiCtrl_laser 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nature.css?v=7610408e" />
+    <script src="../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FreiCtrl_laser.host_utils</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for FreiCtrl_laser.host_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># this code is a starting point for the host-application communicating with the CircuitPython</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">UUID</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">serial</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># from Task_classes import Trial</span>
+<span class="c1"># get inspiration https://courses.ideate.cmu.edu/16-223/f2021/text/code/pico-remote.html</span>
+
+<span class="c1"># json_stream = json.dumps(vars(trial))</span>
+<span class="c1"># new_dict = json.loads(json_stream)</span>
+
+<span class="c1"># ser = serial.Serial(&#39;/dev/ttyACM2&#39;)  # open serial port</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">params = TaskParameters().dictionize()</span>
+<span class="sd">params.update(**{&quot;message_type&quot;:&quot;TaskParameters&quot;})</span>
+
+<span class="sd">params = json.dumps(params) + &quot;\n&quot;</span>
+<span class="sd">ser.write(params.encode())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PythonBoardCommander</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ser</span><span class="p">:</span> <span class="n">serial</span><span class="o">.</span><span class="n">Serial</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;PythonBoardComm&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serial</span> <span class="o">=</span> <span class="n">ser</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">received</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waiting_forecho</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waiting_forpong</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params_names</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mess_in</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># self.serial.reset_output_buffer()  # make sure buffers are empty</span>
+        <span class="c1"># self.serial.reset_input_buffer()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_message_queu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mess_in</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_laser_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;message_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;LaserParams&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serial</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">dictionary</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_task_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;TaskParameters&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params_names</span> <span class="o">=</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">dictionary</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Sending Task parameters&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_StartTask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;StartTask&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Sending Task Start Command&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+        <span class="c1"># if not self.send_command():</span>
+        <span class="c1">#    logging.warning(&#39;Start Command was not echoed! Check if Task started&#39;)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_EndTask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;EndTask&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Sending End Task Command&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ask_dummy_trial</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;AskTrial&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Asking for dummy trial data&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ask_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;AskTask&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Asking for task params data&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset_board</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;ResetBoard&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;resetting board&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_box</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;ResetBox&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing Box&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">exit_debug</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;ExitDebug&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Exiting Debug&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_startSignal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;SendStartPul&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Asked to send trial start pulses&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">PingCircuitPython</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># not really needed if i echo commands...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;Ping&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;send ping&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waiting_forpong</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ToggleLED</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;SwitchLED&quot;</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;turn_on&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;turn_off&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="n">gate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">STOPMove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;MoveArm&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;stopMotors&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveArmR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;MoveArm&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;moveArmR&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveArmL</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;MoveArm&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;moveArmL&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">AskAngles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;MoveArm&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;askAngles&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveGate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;MoveGate&quot;</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;open_gate&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;close_gate&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="n">gate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">MoveServo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;MoveGate&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;move_gate_fast&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="n">gate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">PlayRewardSound</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;playing reward sound&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;PlaySound&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;play&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="s1">&#39;reward&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">PlayErrorSound</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;playing error sound&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;PlaySound&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;play&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="s1">&#39;noise&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">GiveReward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Giving reward&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;GiveReward&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;give_reward&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">RewardPumpToggle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Toggling Reward Pump&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;GiveReward&quot;</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;open_valve&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;close_valve&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ToggleCameraTriggers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Toggling camera Triggers&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;CameraTrigger&quot;</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;startPulsing&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">fps</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;stopPulsing&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">PingArduino</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Pinging Arduino&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;PingArduino&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;pingSlave&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">PollBeamBlockes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;PollingBeamBlocks&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;PollBeamBlockers&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;pollBeamblockers&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">RoomLights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Turning roomlights </span><span class="si">{</span><span class="s1">&#39;On&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Off&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="s2">&quot;RoomLights&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;dimm_roomlight&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="mi">255</span> <span class="o">//</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_command</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_ctrlc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; writes ctrl c character to serial &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serial</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x03</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># tODO write this to the other serial not data</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_ctrld</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serial</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x04</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="n">dict2send</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">dict2send</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;serial&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">dict2send</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">dict2send</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;received&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">dict2send</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;waiting_forecho&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">dict2send</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;waiting_forpong&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">dict2send</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;mess_in&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">dict2send</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;params_names&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">dict2send</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_command</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">message2send</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_bytes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mess_in</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message2send</span><span class="p">)</span>
+        <span class="c1"># self.serial.write(mess_in)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serial</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">message2send</span><span class="p">)</span>
+        <span class="c1"># replace with send</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waiting_forecho</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># mess_out = self.serial.readline()</span>
+        <span class="c1"># self.serial.read_input()</span>
+        <span class="c1"># replace with self.serial.read_input()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">pico_data_received</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process a message from the Pico.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Received: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">payload</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">received</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="c1"># TODO Problem if we send more then one message before aknowledging it, it contains previos params.</span>
+        <span class="c1"># strip params direktly after sending and not after aknowledgement ?</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">waiting_forecho</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">m_id</span><span class="p">,</span> <span class="n">message</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mess_in</span><span class="p">):</span>  <span class="c1"># look through messages we await echo from.</span>
+                <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="o">==</span> <span class="n">payload</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfull transmission </span><span class="si">{</span><span class="n">m_id</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> out of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mess_in</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">message_type</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params_names</span><span class="p">:</span>
+                            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>  <span class="c1"># purge params from self to not be resend</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">params_names</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">mess_in</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">m_id</span><span class="p">)</span>  <span class="c1"># remove message from list</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mess_in</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># waiting list is empty</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">waiting_forecho</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># went throu all but not found</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Echo not equal input !&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">waiting_forpong</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waiting_forpong</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">received</span> <span class="o">==</span> <span class="s1">&#39;Pong&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Board on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">serial</span><span class="o">.</span><span class="n">_port</span><span class="o">.</span><span class="n">portName</span><span class="p">()</span><span class="si">}</span><span class="s1"> responded to ping&#39;</span><span class="p">)</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+
+<div class="viewcode-block" id="DataWriter">
+<a class="viewcode-back" href="../../api.html#FreiCtrl_laser.host_utils.DataWriter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataWriter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for writing data received from serial to csv and JSON file</span>
+<span class="sd">    data arrives per trial and is written as individual row&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path2save</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">write_csv</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;DataWriter&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="s1">&#39;DEBUG&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span> <span class="o">=</span> <span class="n">session_id</span>
+        <span class="k">if</span> <span class="n">path2save</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prepath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prepath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path2save</span><span class="p">)</span>
+        <span class="n">prepath</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span> <span class="o">=</span> <span class="n">prepath</span> <span class="o">/</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">session_id</span><span class="si">}</span><span class="s1">_behav.csv&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">json_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.json&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">header_written</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># flag to check if header was written</span>
+        <span class="c1"># here one can define the sorting in the csv!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;trial_nr&#39;</span><span class="p">,</span> <span class="s2">&quot;trial_start_absolute&quot;</span><span class="p">,</span> <span class="s2">&quot;trial_end_absolute&quot;</span><span class="p">,</span> <span class="s2">&quot;duration&quot;</span><span class="p">,</span> <span class="s2">&quot;outcome&quot;</span><span class="p">,</span> <span class="s2">&quot;choice&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;hit&quot;</span><span class="p">,</span> <span class="s2">&quot;omission&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;nose_poke_timingC&quot;</span><span class="p">,</span> <span class="s2">&quot;NP_exitC&quot;</span><span class="p">,</span> <span class="s1">&#39;nose_poke_durationC&#39;</span><span class="p">,</span> <span class="s2">&quot;nosepoke_SETdur_C&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;nose_poke_timingR&quot;</span><span class="p">,</span> <span class="s2">&quot;NP_exitR&quot;</span><span class="p">,</span> <span class="s1">&#39;nose_poke_durationR&#39;</span><span class="p">,</span> <span class="s2">&quot;nosepoke_SETdur_R&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;nose_poke_timingL&quot;</span><span class="p">,</span> <span class="s2">&quot;NP_exitL&quot;</span><span class="p">,</span> <span class="s1">&#39;nose_poke_durationL&#39;</span><span class="p">,</span> <span class="s2">&quot;nosepoke_SETdur_L&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;time_to_NPd&quot;</span><span class="p">,</span> <span class="s2">&quot;time_to_NPc&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;gate_openedC&quot;</span><span class="p">,</span> <span class="s2">&quot;gate_closedC&quot;</span><span class="p">,</span> <span class="s2">&quot;gate_openedR&quot;</span><span class="p">,</span> <span class="s2">&quot;gate_closedR&quot;</span><span class="p">,</span> <span class="s2">&quot;gate_openedL&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;gate_closedL&quot;</span><span class="p">,</span> <span class="s2">&quot;angle_R&quot;</span><span class="p">,</span> <span class="s2">&quot;angle_L&quot;</span><span class="p">,</span> <span class="s2">&quot;reward_prob_C&quot;</span><span class="p">,</span> <span class="s2">&quot;reward_prob_R&quot;</span><span class="p">,</span> <span class="s2">&quot;reward_prob_L&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;reward_pump_on&quot;</span><span class="p">,</span> <span class="s2">&quot;reward_pump_off&quot;</span><span class="p">,</span> <span class="s2">&quot;lick_start&quot;</span><span class="p">,</span> <span class="s2">&quot;time_to_lick&quot;</span><span class="p">,</span> <span class="s2">&quot;tone_on&quot;</span><span class="p">,</span> <span class="s2">&quot;tone_off&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;tone_dur&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;tone_type&quot;</span><span class="p">,</span> <span class="s2">&quot;LED_C_on&quot;</span><span class="p">,</span> <span class="s2">&quot;LED_C_off&quot;</span><span class="p">,</span> <span class="s2">&quot;LED_R_on&quot;</span><span class="p">,</span> <span class="s2">&quot;LED_R_off&quot;</span><span class="p">,</span> <span class="s2">&quot;LED_L_on&quot;</span><span class="p">,</span> <span class="s2">&quot;LED_L_off&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;trial_sync_pulse&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trial_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hit_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">omission_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">miss_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lr_balance</span> <span class="o">=</span> <span class="n">RunningAverage</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">np_duration</span> <span class="o">=</span> <span class="n">RunningAverage</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">motivation_counter</span> <span class="o">=</span> <span class="n">RunningAverage</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">laser_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_csv</span> <span class="o">=</span> <span class="n">write_csv</span>  <span class="c1"># whether or not to have a csv copy of the trial data</span>
+
+<div class="viewcode-block" id="DataWriter.injest_task">
+<a class="viewcode-back" href="../../api.html#FreiCtrl_laser.host_utils.DataWriter.injest_task">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">injest_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;get a dictionary from GUI writes the params to Json&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">task</span>
+        <span class="c1"># self.task.update(**{&#39;session_id&#39;: self.session_id})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;session_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;trials&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;motortimes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeJSON</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DataWriter.injest_trial">
+<a class="viewcode-back" href="../../api.html#FreiCtrl_laser.host_utils.DataWriter.injest_trial">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">injest_trial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trial</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">do_additional_math</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets a trial dictionary, writes to csv and to json</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;No task was passed!, saving only trial info&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;session_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span><span class="p">,</span> <span class="s1">&#39;trials&#39;</span><span class="p">:</span> <span class="nb">list</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trial_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">trial</span><span class="p">[</span><span class="s1">&#39;trial_nr&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trial_counter</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Trial counter host/remote do not correspond !&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">trial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_trial_math</span><span class="p">(</span><span class="n">trial</span><span class="p">)</span>  <span class="c1"># add some additional info to the trial</span>
+        <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_csv</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writeTrial</span><span class="p">(</span><span class="n">trial</span><span class="p">)</span>  <span class="c1"># append trial to csv</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;trials&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trial</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeJSON</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">trial</span><span class="p">[</span><span class="s1">&#39;outcome&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;omission&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">omission_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">trial</span><span class="p">[</span><span class="s1">&#39;outcome&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;error&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">trial</span><span class="p">[</span><span class="s1">&#39;outcome&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;hit&#39;</span> <span class="ow">or</span> <span class="n">trial</span><span class="p">[</span><span class="s1">&#39;reward_pump_on&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hit_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">trial</span><span class="p">[</span><span class="s1">&#39;outcome&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;miss&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">miss_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">trial</span><span class="p">[</span><span class="s1">&#39;outcome&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;omission&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">motivation_counter</span><span class="o">.</span><span class="n">add_value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">motivation_counter</span><span class="o">.</span><span class="n">add_value</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># self.log.info(f&#39;Current mot counter{ self.motivation_counter.moving_sum}&#39;)</span>
+        <span class="k">if</span> <span class="n">trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingR&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">right_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">np_duration</span><span class="o">.</span><span class="n">add_value</span><span class="p">(</span><span class="n">trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_durationR&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lr_balance</span><span class="o">.</span><span class="n">add_value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">side</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span>
+        <span class="k">elif</span> <span class="n">trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingL&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">left_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">np_duration</span><span class="o">.</span><span class="n">add_value</span><span class="p">(</span><span class="n">trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_durationL&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lr_balance</span><span class="o">.</span><span class="n">add_value</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">side</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">side</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">np_duration</span><span class="o">.</span><span class="n">add_value</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lr_balance</span><span class="o">.</span><span class="n">add_value</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">trial</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;laser_trigger_time&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">trial</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;laser_params&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;trigger1&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mock&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">laser_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received trial </span><span class="si">{</span><span class="n">trial</span><span class="p">[</span><span class="s1">&#39;trial_nr&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">trial</span><span class="p">[</span><span class="s1">&#39;outcome&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">injest_motortimes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">motor_time</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;motortimes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">motor_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeJSON</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DataWriter.make_trial_math">
+<a class="viewcode-back" href="../../api.html#FreiCtrl_laser.host_utils.DataWriter.make_trial_math">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_trial_math</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_trial</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;modify the trial dictionary with some more calculated values&quot;&quot;&quot;</span>
+        <span class="n">mod_dict_trial</span> <span class="o">=</span> <span class="n">dict_trial</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># calculate the duration of the trial</span>
+        <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s2">&quot;duration&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s2">&quot;trial_end_absolute&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s2">&quot;trial_start_absolute&quot;</span><span class="p">]</span>
+
+        <span class="c1"># NP timing from the gate being open</span>
+        <span class="k">if</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingR&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;time_to_NPd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingR&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mod_dict_trial</span><span class="p">[</span>
+                <span class="s1">&#39;gate_openedR&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingL&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;time_to_NPd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingL&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mod_dict_trial</span><span class="p">[</span>
+                <span class="s1">&#39;gate_openedL&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;time_to_NPd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># NP timing for central_port</span>
+        <span class="k">if</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingC&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;time_to_NPc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingC&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mod_dict_trial</span><span class="p">[</span>
+                <span class="s1">&#39;gate_openedC&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;time_to_NPc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># timing to reward</span>
+        <span class="c1"># use hit time instead ?</span>
+        <span class="k">if</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;lick_start&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;hit&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;time_to_lick&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;lick_start&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;hit&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;time_to_lick&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Choise</span>
+        <span class="k">if</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingR&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;choice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span>
+        <span class="k">elif</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingL&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;choice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;choice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
+
+        <span class="c1"># tone duration</span>
+        <span class="k">if</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;tone_on&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;tone_off&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;tone_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;tone_off&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;tone_on&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;tone_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Nosepoke exit</span>
+        <span class="k">if</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingR&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;NP_exitR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingR&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_durationR&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;NP_exitR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingL&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;NP_exitL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingL&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_durationL&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;NP_exitL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># NosepokeC exit</span>
+        <span class="k">if</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingC&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;NP_exitC&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_timingC&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;nose_poke_durationC&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mod_dict_trial</span><span class="p">[</span><span class="s1">&#39;NP_exitC&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">mod_dict_trial</span></div>
+
+
+<div class="viewcode-block" id="DataWriter.writeJSON">
+<a class="viewcode-back" href="../../api.html#FreiCtrl_laser.host_utils.DataWriter.writeJSON">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeJSON</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write global parameters as json</span>
+<span class="sd">        input is Task.strip_parameters(return_global = True) &quot;&quot;&quot;</span>
+        <span class="c1"># header.update(**{&#39;datetime&#39;: datetime.now().strftime(&#39;%Y%m%d_%H%M&#39;)})</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fi</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataWriter.writeTrial">
+<a class="viewcode-back" href="../../api.html#FreiCtrl_laser.host_utils.DataWriter.writeTrial">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeTrial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trial</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;write a  dict representing Information about a single Trial to file&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fieldnames</span><span class="p">,</span> <span class="n">extrasaction</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Opened </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="si">}</span><span class="s2"> for writing&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">header_written</span><span class="p">:</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">header_written</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">trial</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Written trial </span><span class="si">{</span><span class="n">trial</span><span class="p">[</span><span class="s1">&#39;trial_nr&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> to file&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataWriter.copyCSV">
+<a class="viewcode-back" href="../../api.html#FreiCtrl_laser.host_utils.DataWriter.copyCSV">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copyCSV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        copy files to specified path, To be called from GUI with DB knowledge</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO trow an error if files not exist !</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="n">target_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json_file</span><span class="p">,</span> <span class="n">target_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Copied </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">target_path</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataWriter.purgeFiles">
+<a class="viewcode-back" href="../../api.html#FreiCtrl_laser.host_utils.DataWriter.purgeFiles">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">purgeFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;delete created files, in case of early abort&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">json_file</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleted </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+
+
+<div class="viewcode-block" id="dict_to_uuid">
+<a class="viewcode-back" href="../../api.html#FreiCtrl_laser.host_utils.dict_to_uuid">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dict_to_uuid</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a dictionary `key`, returns a hash string as UUID</span>
+<span class="sd">    Args:</span>
+<span class="sd">        key (dict): Any python dictionary&quot;&quot;&quot;</span>
+    <span class="n">hashed</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">hashed</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="n">hashed</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">uuid</span><span class="o">.</span><span class="n">UUID</span><span class="p">(</span><span class="nb">hex</span><span class="o">=</span><span class="n">hashed</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">())</span></div>
+
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="n">Stage_params</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;stage_tuple&#39;</span><span class="p">,</span> <span class="s2">&quot;stage_name,params,stage_description&quot;</span><span class="p">)</span>
+<span class="n">Version_params</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;version_tuple&#39;</span><span class="p">,</span> <span class="s2">&quot;version,stages_list&quot;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">from Task_parameters import TaskParameters</span>
+<span class="sd">params = TaskParameters().dictionize()</span>
+<span class="sd">NP_init = Stage_params(&quot;NP_init&quot;,params,&#39;Initial stage, whereby the animal learns to interact with the nose poke.&#39;)</span>
+<span class="sd">ver0 = Version_params(0,[NP_init])</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">HostsideParamsOld</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path2json</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="o">=</span> <span class="s2">&quot;params.json&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path2json</span> <span class="o">=</span> <span class="n">path2json</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;ParameterCommander&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">import_taskParams</span><span class="p">()</span>
+        <span class="c1"># self.all_versions()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_from_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_params</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_params</span><span class="p">)):</span>
+            <span class="n">all_params</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">Version_params</span><span class="o">.</span><span class="n">_make</span><span class="p">(</span><span class="n">all_params</span><span class="p">[</span><span class="n">v</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_params</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">stages_list</span><span class="p">)):</span>
+                <span class="n">all_params</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">stages_list</span><span class="p">[</span><span class="n">st</span><span class="p">]</span> <span class="o">=</span> <span class="n">Stage_params</span><span class="o">.</span><span class="n">_make</span><span class="p">(</span><span class="n">all_params</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">stages_list</span><span class="p">[</span><span class="n">st</span><span class="p">])</span>
+                <span class="n">all_params</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">stages_list</span><span class="p">[</span><span class="n">st</span><span class="p">]</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="o">**</span><span class="p">{</span><span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">all_params</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="s2">&quot;training_stage&quot;</span><span class="p">:</span> <span class="n">all_params</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">stages_list</span><span class="p">[</span><span class="n">st</span><span class="p">]</span><span class="o">.</span><span class="n">stage_name</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span> <span class="o">=</span> <span class="n">all_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path2json</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="o">=</span> <span class="s2">&quot;params.json&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path2json</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fi</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">modify_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;modifying parameters vor v</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2"> and stage: </span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">v_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">v_id</span><span class="p">]</span><span class="o">.</span><span class="n">version</span> <span class="o">!=</span> <span class="n">version</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">v_id</span><span class="p">]</span><span class="o">.</span><span class="n">stages_list</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">v_id</span><span class="p">]</span><span class="o">.</span><span class="n">stages_list</span><span class="p">[</span><span class="n">st</span><span class="p">]</span><span class="o">.</span><span class="n">stage_name</span> <span class="o">!=</span> <span class="n">stage</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">v_id</span><span class="p">]</span><span class="o">.</span><span class="n">stages_list</span><span class="p">[</span><span class="n">st</span><span class="p">]</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_json</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_taskParams</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;reads the parameters json&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
+        <span class="n">Stage_params</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;stage_tuple&#39;</span><span class="p">,</span> <span class="s2">&quot;stage_name,params&quot;</span><span class="p">)</span>
+        <span class="n">Version_params</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;version_tuple&#39;</span><span class="p">,</span> <span class="s2">&quot;version,stages_list&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path2json</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fi</span><span class="p">:</span>
+                <span class="n">all_params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fi</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_from_list</span><span class="p">(</span><span class="n">all_params</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No parameter File exists!&#39;</span><span class="p">)</span>
+        <span class="c1"># for v in range(len(all_params)):</span>
+        <span class="c1">#     all_params[v] = Version_params._make(all_params[v])</span>
+        <span class="c1">#     for st in range(len(all_params[v].stages_list)):</span>
+        <span class="c1">#         all_params[v].stages_list[v] = Stage_params._make(all_params[v].stages_list[v])</span>
+        <span class="c1">#         all_params[v].stages_list[v].params.update(</span>
+        <span class="c1">#             **{&quot;version&quot;: all_params[v].version, &quot;training_stage&quot;: all_params[v].stages_list[v].stage_name})</span>
+        <span class="c1"># self.all_params = all_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;create a hash of the parameters to check if those already exist&quot;&quot;&quot;</span>
+        <span class="c1"># maybe remove the version number from the hash</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">all_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">versions</span> <span class="o">=</span> <span class="p">[</span><span class="n">ver</span><span class="o">.</span><span class="n">version</span> <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">versions</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">all_stages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;returns all stages in a certain version of parameters_set&quot;&quot;&quot;</span>
+        <span class="n">stages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ver</span><span class="o">.</span><span class="n">version</span> <span class="o">!=</span> <span class="n">version</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">ver</span><span class="o">.</span><span class="n">stages_list</span><span class="p">:</span>
+                <span class="n">stages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Stage_params</span><span class="o">.</span><span class="n">_make</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span><span class="o">.</span><span class="n">stage_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stages</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stage2find</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_versions</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Ver.</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1"> doesnt exist&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">stage2find</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_stages</span><span class="p">(</span><span class="n">version</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Stage </span><span class="si">{</span><span class="n">stage2find</span><span class="si">}</span><span class="s1"> doesnt exist in ver.</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ver</span><span class="o">.</span><span class="n">version</span> <span class="o">!=</span> <span class="n">version</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">ver</span><span class="o">.</span><span class="n">stages_list</span><span class="p">:</span>
+                <span class="n">stage</span> <span class="o">=</span> <span class="n">Stage_params</span><span class="o">.</span><span class="n">_make</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">stage</span><span class="o">.</span><span class="n">stage_name</span> <span class="o">!=</span> <span class="n">stage2find</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">params</span>
+
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_new_stage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_new_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+
+        <span class="k">pass</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">HostsideParams</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path2json</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="o">=</span> <span class="s2">&quot;params.json&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stages</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">versions</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path2json</span> <span class="o">=</span> <span class="n">path2json</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;ParameterCommander&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_json</span><span class="p">()</span>
+        <span class="c1"># self.all_versions()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reload_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_json</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path2json</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="o">=</span> <span class="s2">&quot;params.json&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path2json</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fi</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;reads the parameters json&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path2json</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fi</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fi</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;No parameter File exists!&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_new_stage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">state_discription</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="c1"># json.load(state_discription)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">stage_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;version_0&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_json</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_new_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">note</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;adds a new version to the parameters&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">stage</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;stage </span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2"> doesnt exist&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;note&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">note</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">stage</span><span class="p">][</span><span class="sa">f</span><span class="s2">&quot;version_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_json</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">version</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">modify_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;modifying parameters vor v</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2"> and stage: </span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stage</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;stage </span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2"> doesnt exist&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;version_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2"> doesnt exist&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">stage</span><span class="p">][</span><span class="sa">f</span><span class="s2">&quot;version_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_json</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">hash_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">stage2find</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UUID</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;create a hash of the parameters to check if those already exist&quot;&quot;&quot;</span>
+        <span class="c1"># maybe remove the version number from the hash</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="n">stage2find</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dict_to_uuid</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">all_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">versions</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">ver</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">stage</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">versions</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">all_stages</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;returns all stages of parameters_set&quot;&quot;&quot;</span>
+        <span class="n">stages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">stages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stages</span> <span class="o">=</span> <span class="n">stages</span>
+        <span class="k">return</span> <span class="n">stages</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stage2find</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">stage2find</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_stages</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Stage </span><span class="si">{</span><span class="n">stage2find</span><span class="si">}</span><span class="s1"> doesnt exist in ver.</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_versions</span><span class="p">(</span><span class="n">stage2find</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Ver.</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1"> doesnt exist&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_params</span><span class="p">[</span><span class="n">stage2find</span><span class="p">][</span><span class="sa">f</span><span class="s2">&quot;version_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Session_backupCreator</span><span class="p">:</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">datastructure_tools.DataBaseAccess</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataBaseAccess</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path2datafiles</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;./data/&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">typical_exptype</span> <span class="o">=</span> <span class="s1">&#39;HillYmaze_Training&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DB</span> <span class="o">=</span> <span class="n">DataBaseAccess</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sessions_indb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s1">&#39;session_id&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sessions2add</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">go_through_files</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fill_session_notinDB</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_session_to_DB</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">change_animal_nr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_animal</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">datastructure_tools.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionClass</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+        <span class="k">assert</span> <span class="n">session_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessions_indb</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Session </span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2"> not in DB!&quot;</span>
+        <span class="k">assert</span> <span class="n">new_animal</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">Animal</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s1">&#39;animal_id&#39;</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Animal </span><span class="si">{</span><span class="n">new_animal</span><span class="si">}</span><span class="s2"> not in DB!&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Trying to patch </span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s1"> to be from animal </span><span class="si">{</span><span class="n">new_animal</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># assert session_id in self.sessions2add, f&quot;Session {session_id} not in files!&quot;</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">Experiment</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">Root</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">Project</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">User</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">Session</span> <span class="o">&amp;</span> <span class="p">{</span>
+                <span class="s2">&quot;session_id&quot;</span><span class="p">:</span> <span class="n">session_id</span><span class="p">})</span><span class="o">.</span><span class="n">fetch1</span><span class="p">()</span>
+        <span class="n">session_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">server_path</span> <span class="o">/</span> <span class="n">session</span><span class="p">[</span><span class="s2">&quot;session_dir&quot;</span><span class="p">]</span>
+        <span class="c1"># self.DB.Session.update1({&quot;session_id&quot;: session_id, &quot;animal_id&quot;: new_animal})</span>
+
+        <span class="n">new_sessname</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">session_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_animal</span><span class="p">,</span> <span class="n">session_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="c1"># create new session</span>
+        <span class="n">session_class</span> <span class="o">=</span> <span class="n">SessionClass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="p">,</span> <span class="n">animal_id</span><span class="o">=</span><span class="n">new_animal</span><span class="p">,</span> <span class="n">session_datetime</span><span class="o">=</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;session_datetime&quot;</span><span class="p">],</span>
+                                     <span class="n">project</span><span class="o">=</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">],</span>
+                                     <span class="n">user</span><span class="o">=</span><span class="n">session</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">],</span> <span class="n">expName</span><span class="o">=</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;experiment_name&quot;</span><span class="p">],</span>
+                                     <span class="n">experiment_template</span><span class="o">=</span><span class="n">session</span><span class="p">[</span><span class="s1">&#39;experiment_template&#39;</span><span class="p">],</span>
+                                     <span class="n">session_id</span><span class="o">=</span><span class="n">new_sessname</span><span class="p">,</span>
+                                     <span class="n">test</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">new_animal</span> <span class="o">==</span> <span class="s1">&#39;MusterMaus&#39;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">pathcreationSuccess</span> <span class="o">=</span> <span class="n">session_class</span><span class="o">.</span><span class="n">createSession_path</span><span class="p">()</span>  <span class="c1"># create Paths on server</span>
+        <span class="k">assert</span> <span class="n">pathcreationSuccess</span><span class="p">,</span> <span class="s2">&quot;paths could not be created&quot;</span>
+        <span class="n">new_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">server_path</span> <span class="o">/</span> <span class="n">session_class</span><span class="o">.</span><span class="n">session_dir</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Created new fodler structure at </span><span class="si">{</span><span class="n">new_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># rename folder</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;renaming</span><span class="si">{</span><span class="n">session_path</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">new_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">session_path</span><span class="p">,</span> <span class="n">new_path</span><span class="p">)</span>
+
+        <span class="c1"># rename files</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">new_path</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+                <span class="n">old_name</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span>
+                <span class="n">new_name</span> <span class="o">=</span> <span class="p">[</span><span class="n">old_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_animal</span><span class="p">]</span>
+                <span class="n">new_name</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">old_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">3</span><span class="p">:])</span>
+                <span class="n">new_name</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_name</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;renaming </span><span class="si">{</span><span class="n">old_name</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">new_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">new_name</span><span class="p">)</span>
+
+        <span class="n">PushSuccess</span> <span class="o">=</span> <span class="n">session_class</span><span class="o">.</span><span class="n">checkInputs</span><span class="p">()</span>  <span class="c1"># checks inputs and pushes to DB</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Created new Session</span><span class="si">{</span><span class="n">new_sessname</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">PushSuccess</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">old_weight</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">Animal</span><span class="o">.</span><span class="n">Weight</span> <span class="o">&amp;</span> <span class="p">{</span><span class="s1">&#39;weight_date&#39;</span><span class="p">:</span> <span class="n">session_class</span><span class="o">.</span><span class="n">session_datetime</span><span class="p">})</span><span class="o">.</span><span class="n">fetch1</span><span class="p">()</span>
+                <span class="n">session_class</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">old_weight</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span>
+                <span class="n">session_class</span><span class="o">.</span><span class="n">weight_note</span> <span class="o">=</span> <span class="n">old_weight</span><span class="p">[</span><span class="s1">&#39;weight_note&#39;</span><span class="p">]</span>
+                <span class="n">session_class</span><span class="o">.</span><span class="n">pushWeights</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Pushed to DB&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not pull weight from DB! enter manually&#39;</span><span class="p">)</span>
+        <span class="c1"># delete entry</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Deleting wrong entry&#39;</span><span class="p">)</span>
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">Session</span> <span class="o">&amp;</span> <span class="n">session</span><span class="p">)</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="c1"># TODO Delete preprocessed and processed files</span>
+
+        <span class="c1"># rename session in in the behavior file.  in daq data is still wrongly named!</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="p">(</span><span class="n">new_path</span> <span class="o">/</span> <span class="s1">&#39;behav&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s1">&#39;*.json&#39;</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fi</span><span class="p">:</span>
+                        <span class="n">sess_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fi</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>  <span class="c1"># not a json</span>
+                    <span class="n">sess_data</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">sess_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="n">sess_data</span><span class="p">[</span><span class="s1">&#39;session_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">session_id</span>
+                        <span class="n">sess_data</span><span class="p">[</span><span class="s1">&#39;session_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_sessname</span>
+                        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fi</span><span class="p">:</span>
+                            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">sess_data</span><span class="p">,</span><span class="n">fi</span><span class="p">)</span>
+                        <span class="k">break</span>
+                    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Session id in beh is not as expected&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">go_through_files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">path2datafiles</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s1">&#39;*_behav.json&#39;</span><span class="p">):</span>
+            <span class="n">sess_id</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">sess_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessions_indb</span> <span class="ow">and</span> <span class="s1">&#39;MusterMaus&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sess_id</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sessions2add</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sess_id</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sessions2add</span><span class="p">)</span><span class="si">}</span><span class="s2"> session not in DB&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_session_to_DB</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">datastructure_tools.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionClass</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">GUI_full</span><span class="w"> </span><span class="kn">import</span> <span class="n">PROJECT_NAME</span><span class="p">,</span> <span class="n">CURRENT_EXPERIMENT</span><span class="p">,</span> <span class="n">BEHAVIOUR_FOLDER</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+        <span class="k">for</span> <span class="n">sess_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessions2add</span><span class="p">:</span>
+            <span class="n">animal_id</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sess_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">session_datetime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sess_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">::</span><span class="mi">3</span><span class="p">]),</span> <span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">_%H%M&#39;</span><span class="p">)</span>
+            <span class="n">session_class</span> <span class="o">=</span> <span class="n">SessionClass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="p">,</span> <span class="n">animal_id</span><span class="o">=</span><span class="n">animal_id</span><span class="p">,</span> <span class="n">session_datetime</span><span class="o">=</span><span class="n">session_datetime</span><span class="p">,</span>
+                                         <span class="n">project</span><span class="o">=</span><span class="n">PROJECT_NAME</span><span class="p">,</span>
+                                         <span class="n">user</span><span class="o">=</span><span class="s1">&#39;as153&#39;</span><span class="p">,</span> <span class="n">expName</span><span class="o">=</span><span class="n">CURRENT_EXPERIMENT</span><span class="p">,</span>
+                                         <span class="n">experiment_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">typical_exptype</span><span class="p">,</span>
+                                         <span class="n">session_id</span><span class="o">=</span><span class="n">sess_id</span><span class="p">,</span>
+                                         <span class="n">test</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">animal_id</span> <span class="o">==</span> <span class="s1">&#39;MusterMaus&#39;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">pathcreationSuccess</span> <span class="o">=</span> <span class="n">session_class</span><span class="o">.</span><span class="n">createSession_path</span><span class="p">()</span>  <span class="c1"># create Paths on server</span>
+            <span class="k">if</span> <span class="n">pathcreationSuccess</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Created session</span><span class="si">{</span><span class="n">sess_id</span><span class="si">}</span><span class="s1"> on the server&#39;</span><span class="p">)</span>
+                <span class="c1">#shutil.copyfile(self.path2datafiles / (sess_id + &#39;_behav.csv&#39;),</span>
+                <span class="c1">#                self.DB.server_path / session_class.session_dir</span>
+                <span class="c1">#                / BEHAVIOUR_FOLDER / (sess_id + &#39;_behav.csv&#39;))</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path2datafiles</span> <span class="o">/</span> <span class="p">(</span><span class="n">sess_id</span> <span class="o">+</span> <span class="s1">&#39;_behav.json&#39;</span><span class="p">),</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">server_path</span> <span class="o">/</span> <span class="n">session_class</span><span class="o">.</span><span class="n">session_dir</span>
+                                <span class="o">/</span> <span class="n">BEHAVIOUR_FOLDER</span> <span class="o">/</span> <span class="p">(</span><span class="n">sess_id</span> <span class="o">+</span> <span class="s1">&#39;_behav.json&#39;</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;copied files&#39;</span><span class="p">)</span>
+                <span class="n">PushSuccess</span> <span class="o">=</span> <span class="n">session_class</span><span class="o">.</span><span class="n">checkInputs</span><span class="p">()</span>  <span class="c1"># checks inputs and pushes to DB</span>
+                <span class="k">if</span> <span class="n">PushSuccess</span><span class="p">:</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">while</span> <span class="n">weight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">weight</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Enter animal weight for </span><span class="si">{</span><span class="n">animal_id</span><span class="si">}</span><span class="s1"> on </span><span class="si">{</span><span class="n">session_datetime</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">weight</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                            <span class="n">weight</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">weight</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Wrong weight format, try again&#39;</span><span class="p">)</span>
+                            <span class="n">weight</span> <span class="o">=</span> <span class="kc">None</span>
+
+                    <span class="n">session_class</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
+                    <span class="n">session_class</span><span class="o">.</span><span class="n">weight_note</span> <span class="o">=</span> <span class="s1">&#39;Training&#39;</span>
+                    <span class="n">session_class</span><span class="o">.</span><span class="n">pushWeights</span><span class="p">()</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Pushed to DB&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RunningAverage</span><span class="p">:</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="o">=</span> <span class="n">window</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">previous_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">moving_average</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">moving_sum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">previous_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">previous_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sess_cleanup</span> <span class="o">=</span> <span class="n">Session_backupCreator</span><span class="p">()</span>
+    <span class="n">sess_cleanup</span><span class="o">.</span><span class="n">sessions2add</span> <span class="o">=</span> <span class="p">[</span><span class="n">sess_cleanup</span><span class="o">.</span><span class="n">sessions2add</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">sess_cleanup</span><span class="o">.</span><span class="n">fill_session_notinDB</span><span class="p">()</span>
+    <span class="c1">#sess_cleanup.change_animal_nr(&quot;20231211_r0093_wt_1607&quot;, &quot;r0092_wt&quot;)</span>
+
+    <span class="c1"># DONT RUN while a session is running !</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FreiCtrl_laser.host_utils</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Artur Schneider (Optophysiology, University Freiburg).
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    </div>
+  </body>
+</html>

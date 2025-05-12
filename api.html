@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Code reference &#8212; FreiCtrl_laser 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=7610408e" />
+    <script src="_static/documentation_options.js?v=8d563738"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Using UART to send parameters and trigger FreiLaser-board" href="uart_api.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="uart_api.html" title="Using UART to send parameters and trigger FreiLaser-board"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Code reference</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="code-reference">
+<h1>Code reference<a class="headerlink" href="#code-reference" title="Link to this heading">¶</a></h1>
+<section id="module-FreiCtrl_laser.host_utils">
+<span id="freictrl-laser"></span><h2>FreiCtrl laser<a class="headerlink" href="#module-FreiCtrl_laser.host_utils" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.DataWriter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.host_utils.</span></span><span class="sig-name descname"><span class="pre">DataWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_id:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path2save:</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'pathlib.Path'&gt;)</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_csv:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/host_utils.html#DataWriter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.host_utils.DataWriter" title="Link to this definition">¶</a></dt>
+<dd><p>Class for writing data received from serial to csv and JSON file
+data arrives per trial and is written as individual row</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.DataWriter.copyCSV">
+<span class="sig-name descname"><span class="pre">copyCSV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/host_utils.html#DataWriter.copyCSV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.host_utils.DataWriter.copyCSV" title="Link to this definition">¶</a></dt>
+<dd><p>copy files to specified path, To be called from GUI with DB knowledge</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.DataWriter.injest_task">
+<span class="sig-name descname"><span class="pre">injest_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/host_utils.html#DataWriter.injest_task"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.host_utils.DataWriter.injest_task" title="Link to this definition">¶</a></dt>
+<dd><p>get a dictionary from GUI writes the params to Json</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.DataWriter.injest_trial">
+<span class="sig-name descname"><span class="pre">injest_trial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_additional_math</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/host_utils.html#DataWriter.injest_trial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.host_utils.DataWriter.injest_trial" title="Link to this definition">¶</a></dt>
+<dd><p>gets a trial dictionary, writes to csv and to json</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.DataWriter.make_trial_math">
+<span class="sig-name descname"><span class="pre">make_trial_math</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/FreiCtrl_laser/host_utils.html#DataWriter.make_trial_math"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.host_utils.DataWriter.make_trial_math" title="Link to this definition">¶</a></dt>
+<dd><p>modify the trial dictionary with some more calculated values</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.DataWriter.purgeFiles">
+<span class="sig-name descname"><span class="pre">purgeFiles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/host_utils.html#DataWriter.purgeFiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.host_utils.DataWriter.purgeFiles" title="Link to this definition">¶</a></dt>
+<dd><p>delete created files, in case of early abort</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.DataWriter.writeJSON">
+<span class="sig-name descname"><span class="pre">writeJSON</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/host_utils.html#DataWriter.writeJSON"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.host_utils.DataWriter.writeJSON" title="Link to this definition">¶</a></dt>
+<dd><p>Write global parameters as json
+input is Task.strip_parameters(return_global = True)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.DataWriter.writeTrial">
+<span class="sig-name descname"><span class="pre">writeTrial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/host_utils.html#DataWriter.writeTrial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.host_utils.DataWriter.writeTrial" title="Link to this definition">¶</a></dt>
+<dd><p>write a  dict representing Information about a single Trial to file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.Stage_params">
+<span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.host_utils.</span></span><span class="sig-name descname"><span class="pre">Stage_params</span></span><a class="headerlink" href="#FreiCtrl_laser.host_utils.Stage_params" title="Link to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">stage_tuple</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.Version_params">
+<span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.host_utils.</span></span><span class="sig-name descname"><span class="pre">Version_params</span></span><a class="headerlink" href="#FreiCtrl_laser.host_utils.Version_params" title="Link to this definition">¶</a></dt>
+<dd><p>from Task_parameters import TaskParameters
+params = TaskParameters().dictionize()
+NP_init = Stage_params(“NP_init”,params,’Initial stage, whereby the animal learns to interact with the nose poke.’)
+ver0 = Version_params(0,[NP_init])</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="FreiCtrl_laser.host_utils.dict_to_uuid">
+<span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.host_utils.</span></span><span class="sig-name descname"><span class="pre">dict_to_uuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/host_utils.html#dict_to_uuid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.host_utils.dict_to_uuid" title="Link to this definition">¶</a></dt>
+<dd><p>Given a dictionary <cite>key</cite>, returns a hash string as UUID
+:param key: Any python dictionary
+:type key: dict</p>
+</dd></dl>
+
+<p id="module-FreiCtrl_laser.luxx_communication">This module uses <strong>pyserial</strong> module for communication with OMICRON LuxX
+laser. The class <strong>Laser</strong> provides convenient methods for control of one
+or several lasers, connected to the computer.</p>
+<p class="rubric">Example</p>
+<p>laser1 = Laser()
+laser1.smart_ask(“GSI”)
+laser1.smart_ask(“GOM”)
+laser1.start()
+laser1.set_power(24)
+laser1.stop()
+del laser1</p>
+<section id="author">
+<h3>Author<a class="headerlink" href="#author" title="Link to this heading">¶</a></h3>
+<p>Roman Kiselev, January 2014
+Artur Schneider, November 2023
+- adopted to python3</p>
+</section>
+<section id="license">
+<h3>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h3>
+<p>GNU GPL - use it for any purpose</p>
+</section>
+<dl class="py class">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.luxx_communication.</span></span><span class="sig-name descname"><span class="pre">Laser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baudrate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser" title="Link to this definition">¶</a></dt>
+<dd><p>This class represents OMICRON LuxX laser. It opens the communication
+port upon object creation and asks the device for model and maximum
+power.</p>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>__init__(port=”auto”, baudrate=500000)</dt><dd><p>constructor. Open port, get model name and power</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>__del__()</dt><dd><p>destructor. Close the port upon completion</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>write(command)</dt><dd><p>send command to device</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>read()</dt><dd><p>read all data from port buffer</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>ask(command)</dt><dd><p>send command and get only the relevant answer, as well as time</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>smart_ask(command)</dt><dd><p>ask, which prints HEX answers in a table</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>print_HEX(HEXstring)</dt><dd><p>print a nice table representing bits in a HEX number</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>start()</dt><dd><p>start emission (takes 3 seconds)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>stop()</dt><dd><p>stop emission immediately</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>setPower(power_value)</dt><dd><p>change the emitted power</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>getPower()</dt><dd><p>ask for the current power (seting point, not actual emitted power)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>setMode</dt><dd><p>set an operating mode: standby, current control, power control
+or analog modulation.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>getMode</dt><dd><p>determine current operating mode</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>setAutostart</dt><dd><p>if set, the laser will start emission on key turn event or on
+powerup. Otherwise, it can be started only from software with
+<em>LOn</em> command (<strong>start</strong> function).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>getAutostart</dt><dd><p>determine if autostart is active</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</section>
+<section id="laser-control">
+<h3>Laser control<a class="headerlink" href="#laser-control" title="Link to this heading">¶</a></h3>
+<p>The device itself contains FTDI microchip, which emulates serial port
+via USB. In Linux it appears as <strong>dev      tyUSB#</strong> file, where <strong>#</strong>
+is a number. In Windows, it leads to appearance of an additional COM
+port (<strong>COM##</strong>).</p>
+<p>If the laser is connected via USB cable, the baudrate is 500000; it can
+also be connected via RS-232 interface with a special cable, then the
+baudrate should be set to 57600.</p>
+<p>The laser is controlled with short commands (register matters!). The
+full desciption of commands can be found in the file
+<em>PhoxX_LuxX_BrixX_command_list V1.0.pdf</em>. Here is a list of commands
+that are relevant to the LuxX model:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>RsC</dt><dd><p>Reset Controller</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GFw</dt><dd><p>Get Firmware</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GSN</dt><dd><p>Get Serial Number</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GSI</dt><dd><p>Get Spec Info</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GMP</dt><dd><p>Get Maximum Power</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GWH</dt><dd><p>Get Working Hours</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>ROM</dt><dd><p>Recall Operating Mode (Standby, CW-ACC, CW-APC, Analog)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GOM</dt><dd><p>Get Operating Mode (<strong>ASCII HEX</strong>)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>SOM</dt><dd><p>Set Operating Mode (<strong>ASCII HEX</strong>)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>SAS</dt><dd><p>Set Auto Start (Laser will emit after startup)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>SAP</dt><dd><p>Set Auto Powerup</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>LOn</dt><dd><p>Laser On - start emission</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>LOf</dt><dd><p>Laser Off</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>POn</dt><dd><p>Power On</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>POf</dt><dd><p>Power Off</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GAS</dt><dd><p>Get Actual Status</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GFB</dt><dd><p>Get Failure Byte (<strong>ASCII HEX</strong>)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GLF</dt><dd><p>Get Last Failurebyte (<strong>ASCII HEX</strong>)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>MDP</dt><dd><p>Measure Diode Power</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>MTD</dt><dd><p>Measure Temperature Diode</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>MTA</dt><dd><p>Measure Temperature Ambient</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>CLD</dt><dd><p>Calibrate Laser Diode</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>SLP</dt><dd><p>Set Level Power - set the emitted power (<strong>ASCII HEX up to 0xFFF</strong>)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>GLP</dt><dd><p>Get Level Power (<strong>ASCII HEX</strong>)</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.ask">
+<span class="sig-name descname"><span class="pre">ask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.ask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.ask" title="Link to this definition">¶</a></dt>
+<dd><p>Write, then read. However, return only the relevant info.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.get_autostart">
+<span class="sig-name descname"><span class="pre">get_autostart</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.get_autostart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.get_autostart" title="Link to this definition">¶</a></dt>
+<dd><p>Check if light is emitted on powerup.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.get_emitted_power">
+<span class="sig-name descname"><span class="pre">get_emitted_power</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.get_emitted_power"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.get_emitted_power" title="Link to this definition">¶</a></dt>
+<dd><p>get current power measured by internal diode
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.get_errors">
+<span class="sig-name descname"><span class="pre">get_errors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.get_errors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.get_errors" title="Link to this definition">¶</a></dt>
+<dd><p>Print contents of failure byte</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.get_mode">
+<span class="sig-name descname"><span class="pre">get_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.get_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.get_mode" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>The device is able to work in the following modes:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>Standby</dt><dd><p>turned off</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>CW-ACC</dt><dd><p>constant wave, automatic current control</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>CW-APC</dt><dd><p>constant wave, automatic power control</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Analog</dt><dd><p>the output power is dependent on the analog input; however,
+it cannot exceed the specified with <strong>set_power</strong> value.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.get_parameters">
+<span class="sig-name descname"><span class="pre">get_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.get_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.get_parameters" title="Link to this definition">¶</a></dt>
+<dd><p>Print a table showing laser status.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.get_power">
+<span class="sig-name descname"><span class="pre">get_power</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.get_power"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.get_power" title="Link to this definition">¶</a></dt>
+<dd><p>Get the current power value in mW</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.read"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.read" title="Link to this definition">¶</a></dt>
+<dd><p>Read all information from the port and return it as string.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.set_autostart">
+<span class="sig-name descname"><span class="pre">set_autostart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.set_autostart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.set_autostart" title="Link to this definition">¶</a></dt>
+<dd><p>Decide if light is emitted on powerup.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.set_mode">
+<span class="sig-name descname"><span class="pre">set_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.set_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.set_mode" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>The device is able to work in the following modes:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>Standby</dt><dd><p>Laser is ready, but no emission is produced. However, if we
+it is turned on (e.g. with <strong>start</strong> function), then change to
+other mode will result in immediate emission, i.e. without
+3 seconds delay.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>CW-ACC</dt><dd><p>constant wave, automatic current control</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>CW-APC</dt><dd><p>constant wave, automatic power control</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Analog</dt><dd><p>the output power is dependent on the analog input; however,
+it cannot exceed the specified with <strong>set_power</strong> value.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.set_power">
+<span class="sig-name descname"><span class="pre">set_power</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">power</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.set_power"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.set_power" title="Link to this definition">¶</a></dt>
+<dd><p>Set the desired power in mW</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.smart_ask">
+<span class="sig-name descname"><span class="pre">smart_ask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.smart_ask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.smart_ask" title="Link to this definition">¶</a></dt>
+<dd><p>Several commands return information coded in ASCII HEX numbers.
+The relevant are bits in the registers. For convenient
+representation, we will print these bytes in tables.
+This is relevant for the following commands:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>GOM</p></li>
+<li><p>GFB</p></li>
+<li><p>GLF</p></li>
+<li><p>GLP</p></li>
+</ul>
+</div></blockquote>
+<p>For all other commands the behavior is identical to <strong>ask</strong> function</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.start" title="Link to this definition">¶</a></dt>
+<dd><p>Start the emission (takes about 3 seconds)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.stop" title="Link to this definition">¶</a></dt>
+<dd><p>Stop the emission immediately</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.Laser.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#Laser.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.Laser.write" title="Link to this definition">¶</a></dt>
+<dd><p>Send <em>command</em> to device. Preceed it with “?” und end with CR.</p>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.LaserColor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.luxx_communication.</span></span><span class="sig-name descname"><span class="pre">LaserColor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#LaserColor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.LaserColor" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.LaserErrors">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.luxx_communication.</span></span><span class="sig-name descname"><span class="pre">LaserErrors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#LaserErrors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.LaserErrors" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.TriggerEnum">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.luxx_communication.</span></span><span class="sig-name descname"><span class="pre">TriggerEnum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#TriggerEnum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.TriggerEnum" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.print_hex">
+<span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.luxx_communication.</span></span><span class="sig-name descname"><span class="pre">print_hex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hex_code</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#print_hex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.print_hex" title="Link to this definition">¶</a></dt>
+<dd><p>Print a nice table that represents <em>hex_code</em> (ASCII HEX string)
+in a binary code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>corresponding decimal numbers in array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="FreiCtrl_laser.luxx_communication.stopwatch">
+<span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.luxx_communication.</span></span><span class="sig-name descname"><span class="pre">stopwatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">func_args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">func_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/luxx_communication.html#stopwatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.luxx_communication.stopwatch" title="Link to this definition">¶</a></dt>
+<dd><p>Call <strong>func</strong> and print elapsed time</p>
+</dd></dl>
+
+<dl class="py class" id="module-FreiCtrl_laser.socket_utils">
+<dt class="sig sig-object py" id="FreiCtrl_laser.socket_utils.MessageStatus">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.socket_utils.</span></span><span class="sig-name descname"><span class="pre">MessageStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/socket_utils.html#MessageStatus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.socket_utils.MessageStatus" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FreiCtrl_laser.socket_utils.MessageType">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.socket_utils.</span></span><span class="sig-name descname"><span class="pre">MessageType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/socket_utils.html#MessageType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.socket_utils.MessageType" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="FreiCtrl_laser.socket_utils.SocketComm">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">FreiCtrl_laser.socket_utils.</span></span><span class="sig-name descname"><span class="pre">SocketComm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'server'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8800</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ssl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/socket_utils.html#SocketComm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.socket_utils.SocketComm" title="Link to this definition">¶</a></dt>
+<dd><p>Socket communication class</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.socket_utils.SocketComm.connect">
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/FreiCtrl_laser/socket_utils.html#SocketComm.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.socket_utils.SocketComm.connect" title="Link to this definition">¶</a></dt>
+<dd><p>Connects to the server</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.socket_utils.SocketComm.stop_waiting_for_connection">
+<span class="sig-name descname"><span class="pre">stop_waiting_for_connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/socket_utils.html#SocketComm.stop_waiting_for_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.socket_utils.SocketComm.stop_waiting_for_connection" title="Link to this definition">¶</a></dt>
+<dd><p>sets the stop event, so the thread will stop waiting for a connection</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="FreiCtrl_laser.socket_utils.SocketComm.threaded_accept_connection">
+<span class="sig-name descname"><span class="pre">threaded_accept_connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FreiCtrl_laser/socket_utils.html#SocketComm.threaded_accept_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#FreiCtrl_laser.socket_utils.SocketComm.threaded_accept_connection" title="Link to this definition">¶</a></dt>
+<dd><p>Accepts connection in a separate thread, to not block the main thread</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Code reference</a><ul>
+<li><a class="reference internal" href="#module-FreiCtrl_laser.host_utils">FreiCtrl laser</a><ul>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.DataWriter"><code class="docutils literal notranslate"><span class="pre">DataWriter</span></code></a><ul>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.DataWriter.copyCSV"><code class="docutils literal notranslate"><span class="pre">DataWriter.copyCSV()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.DataWriter.injest_task"><code class="docutils literal notranslate"><span class="pre">DataWriter.injest_task()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.DataWriter.injest_trial"><code class="docutils literal notranslate"><span class="pre">DataWriter.injest_trial()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.DataWriter.make_trial_math"><code class="docutils literal notranslate"><span class="pre">DataWriter.make_trial_math()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.DataWriter.purgeFiles"><code class="docutils literal notranslate"><span class="pre">DataWriter.purgeFiles()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.DataWriter.writeJSON"><code class="docutils literal notranslate"><span class="pre">DataWriter.writeJSON()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.DataWriter.writeTrial"><code class="docutils literal notranslate"><span class="pre">DataWriter.writeTrial()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.Stage_params"><code class="docutils literal notranslate"><span class="pre">Stage_params</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.Version_params"><code class="docutils literal notranslate"><span class="pre">Version_params</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.host_utils.dict_to_uuid"><code class="docutils literal notranslate"><span class="pre">dict_to_uuid()</span></code></a></li>
+<li><a class="reference internal" href="#author">Author</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser"><code class="docutils literal notranslate"><span class="pre">Laser</span></code></a><ul>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.ask"><code class="docutils literal notranslate"><span class="pre">Laser.ask()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.get_autostart"><code class="docutils literal notranslate"><span class="pre">Laser.get_autostart()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.get_emitted_power"><code class="docutils literal notranslate"><span class="pre">Laser.get_emitted_power()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.get_errors"><code class="docutils literal notranslate"><span class="pre">Laser.get_errors()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.get_mode"><code class="docutils literal notranslate"><span class="pre">Laser.get_mode()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.get_parameters"><code class="docutils literal notranslate"><span class="pre">Laser.get_parameters()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.get_power"><code class="docutils literal notranslate"><span class="pre">Laser.get_power()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.read"><code class="docutils literal notranslate"><span class="pre">Laser.read()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.set_autostart"><code class="docutils literal notranslate"><span class="pre">Laser.set_autostart()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.set_mode"><code class="docutils literal notranslate"><span class="pre">Laser.set_mode()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.set_power"><code class="docutils literal notranslate"><span class="pre">Laser.set_power()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.smart_ask"><code class="docutils literal notranslate"><span class="pre">Laser.smart_ask()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.start"><code class="docutils literal notranslate"><span class="pre">Laser.start()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.stop"><code class="docutils literal notranslate"><span class="pre">Laser.stop()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.Laser.write"><code class="docutils literal notranslate"><span class="pre">Laser.write()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.LaserColor"><code class="docutils literal notranslate"><span class="pre">LaserColor</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.LaserErrors"><code class="docutils literal notranslate"><span class="pre">LaserErrors</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.TriggerEnum"><code class="docutils literal notranslate"><span class="pre">TriggerEnum</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.print_hex"><code class="docutils literal notranslate"><span class="pre">print_hex()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.luxx_communication.stopwatch"><code class="docutils literal notranslate"><span class="pre">stopwatch()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.socket_utils.MessageStatus"><code class="docutils literal notranslate"><span class="pre">MessageStatus</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.socket_utils.MessageType"><code class="docutils literal notranslate"><span class="pre">MessageType</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.socket_utils.SocketComm"><code class="docutils literal notranslate"><span class="pre">SocketComm</span></code></a><ul>
+<li><a class="reference internal" href="#FreiCtrl_laser.socket_utils.SocketComm.connect"><code class="docutils literal notranslate"><span class="pre">SocketComm.connect()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.socket_utils.SocketComm.stop_waiting_for_connection"><code class="docutils literal notranslate"><span class="pre">SocketComm.stop_waiting_for_connection()</span></code></a></li>
+<li><a class="reference internal" href="#FreiCtrl_laser.socket_utils.SocketComm.threaded_accept_connection"><code class="docutils literal notranslate"><span class="pre">SocketComm.threaded_accept_connection()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="uart_api.html"
+                          title="previous chapter">Using UART to send parameters and trigger FreiLaser-board</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="uart_api.html" title="Using UART to send parameters and trigger FreiLaser-board"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Code reference</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Artur Schneider (Optophysiology, University Freiburg).
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    </div>
+  </body>
+</html>

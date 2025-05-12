@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Hardware Circuits &#8212; FreiCtrl_laser 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=7610408e" />
+    <script src="_static/documentation_options.js?v=8d563738"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="User Guide" href="user_guide.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="user_guide.html" title="User Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Hardware Circuits</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="hardware-circuits">
+<h1>Hardware Circuits<a class="headerlink" href="#hardware-circuits" title="Link to this heading">¶</a></h1>
+<p>The FreiLaser system is configured using the Raspberry Pi Pico H, chosen for its pre-assembled header and compatibility
+with the IO expansion board for simplified connections.</p>
+<p>We now provide a gerber files for PCB for ease of assembly. PCB can be ordered from https://jlcpcb.com/ or https://portal.multi-circuit-boards.eu. Gerber files can be found under design_files.</p>
+<section id="circuit-diagram">
+<h2>Circuit diagram<a class="headerlink" href="#circuit-diagram" title="Link to this heading">¶</a></h2>
+<p><img alt="Figure3.png" src="_images/Figure3.png" /></p>
+</section>
+<section id="assemble-the-pcb">
+<h2>Assemble the PCB<a class="headerlink" href="#assemble-the-pcb" title="Link to this heading">¶</a></h2>
+<p>Solder the headers, connectors and switches to the PCB. Insert the breakout boards and Pico into the headers. Insert the FOD3182 into sockets.
+<img alt="Figure4.png" src="_images/Figure4.png" /></p>
+</section>
+<section id="laserctrl-circuit-diagram-for-manual-wiring">
+<h2>LaserCtrl circuit diagram for manual wiring<a class="headerlink" href="#laserctrl-circuit-diagram-for-manual-wiring" title="Link to this heading">¶</a></h2>
+<p>Wire the elements accordign to figure below
+<img alt="HillYMaze_board-02.png" src="_images/HillYMaze_board-12.png" /></p>
+<ul class="simple">
+<li><p>Adafruit 757 voltage shifter is required if any components sending a trigger signal operate on other voltage than 3.3~V.</p></li>
+<li><p>In our case some trigger signals (Trigger3-6) come from beam-breakers which operate on 5~V, thus the Adafruit 757 is
+wired to 5~V as high voltage (HV-pin). Please adopt the HV according to your needs.</p></li>
+<li><p>The DAC (MCP4728A4) allows to output complex waveforms or control the laser powever via an analog singal.</p></li>
+<li><p>DAC power (VCC-pin) is also wired to 5~V line as we would like our analog signal to range between 0-5~V. If other
+ranges are required, wire the VCC accordingly.</p></li>
+<li><p>The DAC is connected to the pico via I2C-protocol which enables fast changes of set voltage.</p></li>
+<li><p>The Pico can be powered via the USB serial or a 5~V input to the VBUS pin. WARNING: do not connect the VBUS if pico is
+powered via USB.</p></li>
+<li><p>Debug switch - switch to mount the disc of pico as a file system. If connected to GND, pico is recognized as a disc
+and files can be modified/copied on it. If not connected, the file system is mounted internally to log events to file.</p></li>
+<li><p>Standalone switch - switch to operate in standalone mode (parameters via USB) or via UART. If pin is connected to GND
+FreiLaser operates in standalone mode.</p></li>
+<li><p>Prime pin - connect to the source of the priming signal. 3.3~V only, otherwise wire through Adafruit 757.</p></li>
+<li><p>CommEnable pin - Indicates whether the system is in an idle state and ready to receive new parameters. If HIGH, pico
+does not accept new parameters and only awaits trigger signals. Connect this pin to GND if this functionality is not required. This is disabled in standalone mode.</p></li>
+<li><p>Connect each laser’s analog output (L1A to L4A) and laser enable signals (L1E to L4E) to your laser’s corresponding channels.</p></li>
+<li><p>Connect the mask outputs (M1-4) to the masking circuit as required.</p></li>
+</ul>
+<p>Example of the complete board after assembly using vertical stacking:
+<img alt="Complete board" src="_images/HillYMaze_board-10.png" /></p>
+</section>
+<section id="maskled-driving-circuit-for-manual-wiring">
+<h2>MaskLED driving circuit for manual wiring<a class="headerlink" href="#maskled-driving-circuit-for-manual-wiring" title="Link to this heading">¶</a></h2>
+<p>The masking circuit is an optional component of the FreiLaser system, utilized primarily in behavioral experiments
+where there is a risk that animals might perceive the laser light and use it as a cue.
+It is designed to drive LEDs to produce light flashes synchronized with laser pulses, effectively masking any potential
+visual cues from the lasers.</p>
+<p><img alt="Mask circuit" src="_images/HillYMaze_board-11.png" /></p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Hardware Circuits</a><ul>
+<li><a class="reference internal" href="#circuit-diagram">Circuit diagram</a></li>
+<li><a class="reference internal" href="#assemble-the-pcb">Assemble the PCB</a></li>
+<li><a class="reference internal" href="#laserctrl-circuit-diagram-for-manual-wiring">LaserCtrl circuit diagram for manual wiring</a></li>
+<li><a class="reference internal" href="#maskled-driving-circuit-for-manual-wiring">MaskLED driving circuit for manual wiring</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="installation.html"
+                          title="previous chapter">Installation</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="user_guide.html"
+                          title="next chapter">User Guide</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/hardware_circuits.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="user_guide.html" title="User Guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Hardware Circuits</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Artur Schneider (Optophysiology, University Freiburg).
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    </div>
+  </body>
+</html>

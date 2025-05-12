@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>GUI overview &#8212; FreiCtrl_laser 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=7610408e" />
+    <script src="_static/documentation_options.js?v=8d563738"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Using UART to send parameters and trigger FreiLaser-board" href="uart_api.html" />
+    <link rel="prev" title="User Guide" href="user_guide.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="uart_api.html" title="Using UART to send parameters and trigger FreiLaser-board"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="user_guide.html" title="User Guide"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GUI overview</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="gui-overview">
+<h1>GUI overview<a class="headerlink" href="#gui-overview" title="Link to this heading">¶</a></h1>
+<p>We provide a GUI based on Python and PyQt6 which allows setting the parameters and visualizing the resulting stimulation
+patterns.</p>
+<section id="run">
+<h2>Run<a class="headerlink" href="#run" title="Link to this heading">¶</a></h2>
+<p>To start the GUI, run the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>FreiCtrl_laser/GuiLaser.py
+</pre></div>
+</div>
+</section>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p><img alt="GUI.PNG" src="_images/HillYMaze_board-05.png" /></p>
+<ul class="simple">
+<li><p>A: Scan serial ports. Choose the data-serial port of the pico from dropdown. Under Linux typically ttyACM1, windows some COM-port.</p></li>
+<li><p>B: Connect/disconnect to the chosen serial port.</p></li>
+<li><p>C: Ping board. Sends a echo request, turns green if board responds.</p></li>
+<li><p>D: Per laser parameters. Waveform options, wavelength determines the visualization color.</p></li>
+<li><p>E: Various parameters of the stimulation. Soem options are only available for specific stimulation waveforms.</p></li>
+<li><p>F: Choose active lasers and/or masks</p></li>
+<li><p>G: Save/load settings to/from file.</p></li>
+<li><p>H: Dropdown of the trigger-input channel.</p></li>
+<li><p>I: Send current parameters to the board.</p></li>
+<li><p>J: Send software trigger signal to the board. This will trigger laser stimulation according to parameters set before!</p></li>
+<li><p>K: Visualization of the current parameters. Filled line indicate the laser output and skipped lines the mask.</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">GUI overview</a><ul>
+<li><a class="reference internal" href="#run">Run</a></li>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="user_guide.html"
+                          title="previous chapter">User Guide</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="uart_api.html"
+                          title="next chapter">Using UART to send parameters and trigger FreiLaser-board</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/gui.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="uart_api.html" title="Using UART to send parameters and trigger FreiLaser-board"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="user_guide.html" title="User Guide"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GUI overview</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Artur Schneider (Optophysiology, University Freiburg).
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    </div>
+  </body>
+</html>

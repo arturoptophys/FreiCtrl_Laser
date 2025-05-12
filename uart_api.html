@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Using UART to send parameters and trigger FreiLaser-board &#8212; FreiCtrl_laser 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=7610408e" />
+    <script src="_static/documentation_options.js?v=8d563738"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Code reference" href="api.html" />
+    <link rel="prev" title="GUI overview" href="gui.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="Code reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="gui.html" title="GUI overview"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Using UART to send parameters and trigger FreiLaser-board</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="using-uart-to-send-parameters-and-trigger-freilaser-board">
+<h1>Using UART to send parameters and trigger FreiLaser-board<a class="headerlink" href="#using-uart-to-send-parameters-and-trigger-freilaser-board" title="Link to this heading">¶</a></h1>
+<p>The parameters can be sent to FreiLaser via serial/UART. The parameters are transmitted as a JavaScript Object Notation
+(JSON) dictionary followed by a line-break character. This enables FreiLaser to operate in fully autonomous mode, where
+another system sets the stimulation parameters and controls the mask and trigger signals. Ideally, this system also
+controls the behavioral task, allowing synchronization of events.</p>
+<p>Example how to send parameters in Python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">serial</span> 
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="n">port</span> <span class="o">=</span> <span class="n">serial</span><span class="o">.</span><span class="n">Serial</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="s1">&#39;/dev/ttyACM1&#39;</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span> <span class="c1"># choose the correct port</span>
+<span class="n">port</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+
+<span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">params</span><span class="p">[</span><span class="s2">&quot;laser_list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1">#set parameters for laser 1</span>
+<span class="n">params</span><span class="p">[</span><span class="s1">&#39;laser1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;pulsetrain_duration&#39;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="c1"># in ms</span>
+                <span class="s1">&#39;frequency&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="c1"># in Hz</span>
+                <span class="s1">&#39;pulse_dur&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="c1"># not needed for sinusiodal</span>
+                <span class="s1">&#39;pulse_type&#39;</span><span class="p">:</span> <span class="s2">&quot;full_sine&quot;</span><span class="p">,</span> <span class="c1"># or square or half_sine</span>
+                <span class="s1">&#39;attenuation_factor&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="c1"># using half the available amplitude</span>
+                <span class="s1">&#39;attenuated_wave&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="c1"># ms</span>
+                <span class="s1">&#39;delay_time&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="c1">#ms                    </span>
+                <span class="s1">&#39;power&#39;</span><span class="p">:</span> <span class="mi">50</span>  <span class="c1"># in % or mW after calibration</span>
+                <span class="p">}</span> 
+                
+<span class="c1">#indicate that laser1 and its mask should be used</span>
+<span class="n">params</span><span class="p">[</span><span class="s2">&quot;laser_list&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;laser1&#39;</span><span class="p">)</span>
+<span class="n">params</span><span class="p">[</span><span class="s2">&quot;laser_list&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;laser1_mask&#39;</span><span class="p">)</span>   
+<span class="n">is_primed</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># preprime as we use internal trigger</span>
+<span class="n">trigger</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># internal trigger connected to GP15 pin of pico </span>
+
+<span class="c1">#set parameters for a trigger</span>
+<span class="n">params</span><span class="p">[</span><span class="s1">&#39;trigger1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;mock&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;is_primed&#39;</span><span class="p">:</span> <span class="n">is_primed</span><span class="p">,</span>
+                      <span class="s1">&#39;use_trigger_pin&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;trigger_pin&quot;</span><span class="p">:</span> <span class="n">trigger</span><span class="p">,</span>
+                      <span class="s2">&quot;use_priming_pin&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">is_primed</span><span class="p">}</span>
+<span class="c1"># indicate its parameters message</span>
+<span class="n">params</span><span class="p">[</span><span class="s1">&#39;message_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;LaserParams&#39;</span> 
+
+<span class="c1"># encode message as JSON</span>
+<span class="n">message</span> <span class="o">=</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> 
+<span class="n">port</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>    
+</pre></div>
+</div>
+<p>Example how to send software trigger in Python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">message</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;TRIGGER&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="n">port</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">message</span><span class="p">)</span> 
+</pre></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="gui.html"
+                          title="previous chapter">GUI overview</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="api.html"
+                          title="next chapter">Code reference</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/uart_api.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="Code reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="gui.html" title="GUI overview"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">FreiCtrl_laser 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Using UART to send parameters and trigger FreiLaser-board</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Artur Schneider (Optophysiology, University Freiburg).
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    </div>
+  </body>
+</html>
