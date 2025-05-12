@@ -2,8 +2,17 @@
 The FreiLaser system is configured using the Raspberry Pi Pico H, chosen for its pre-assembled header and compatibility
 with the IO expansion board for simplified connections.  
 
+We now provide a gerber files for PCB for ease of assembly. PCB can be ordered from https://jlcpcb.com/ or https://portal.multi-circuit-boards.eu. Gerber files can be found under design_files.
 
-### LaserCtrl circuit diagram
+### Circuit diagram
+![Figure3.png](../docs/_static/Figure3.png)
+
+### Assemble the PCB
+Solder the headers, connectors and switches to the PCB. Insert the breakout boards and Pico into the headers. Insert the FOD3182 into sockets.
+![Figure4.png](../docs/_static/Figure4.png)
+
+
+### LaserCtrl circuit diagram for manual wiring
 Wire the elements accordign to figure below
 ![HillYMaze_board-02.png](../docs/_static/HillYMaze_board-12.png)
 
@@ -29,7 +38,7 @@ does not accept new parameters and only awaits trigger signals. Connect this pin
 Example of the complete board after assembly using vertical stacking:
 ![Complete board](../docs/_static/HillYMaze_board-10.png)
 
-### MaskLED driving circuit
+### MaskLED driving circuit for manual wiring
 The masking circuit is an optional component of the FreiLaser system, utilized primarily in behavioral experiments 
 where there is a risk that animals might perceive the laser light and use it as a cue. 
 It is designed to drive LEDs to produce light flashes synchronized with laser pulses, effectively masking any potential
