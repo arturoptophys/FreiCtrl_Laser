@@ -45,100 +45,6 @@ class InfoDialog(QMessageBox):
             "%s" % message,
             buttons=QMessageBox.StandardButton.Ok)
 
-class SessionDoneDialog(QDialog):
-    def __init__(self, main, sess_id: str = 'testSess', trial_nr: int = 0, weight_note: str = 'TV'):
-        super(SessionDoneDialog, self).__init__(main)
-        self.sess_id = sess_id
-        self.log = logging.getLogger(f'SessionDoneDialog')
-        self.log.setLevel(logging.INFO)
-        self.path2file = Path(__file__)
-        uic.loadUi(self.path2file.parent / 'GUI' / 'SessionDone_dialog.ui', self)
-        self.SessionId_label.setText(self.sess_id)
-        self.WeightNote_plainTextEdit.setPlainText(weight_note)
-        self.parent = main
-        self.TrialNumber.display(trial_nr)
-
-        self.SaveB.clicked.connect(self.saveSess)
-        self.IgnoreB.clicked.connect(self.ignoreSess)
-        self.DiscardB.clicked.connect(self.discardSess)
-
-        self.DiscardB.setIcon(QtGui.QIcon("GUI/icons/discard.svg"))
-        self.SaveB.setIcon(QtGui.QIcon("GUI/icons/pushDB.svg"))
-        self.IgnoreB.setIcon(QtGui.QIcon("GUI/icons/bug.svg"))
-
-        if datetime.date.today().weekday() == 4:  #ITS friday
-            self.checkBox.setChecked(True)
-        else:
-            self.checkBox.setChecked(False)
-
-        #self.WeightNote_plainTextEdit.clear()
-
-        #self.WeightNote_plainTextEdit.setText("Training")
-
-    def saveSess(self):
-        weight = self.AnimalWeightSpin.value()
-        weight_note = self.WeightNote_plainTextEdit.toPlainText()
-        sess_note = self.SessNote_plainTextEdit.toPlainText()
-        if self.checkBox.isChecked():
-            try:
-                qtime = self.ZWRtimeEdit.time()
-                today = datetime.date.today()
-                time = datetime.time(qtime.hour(), qtime.minute(), qtime.second())
-                zwd = datetime.datetime.combine(today, time)
-            except Exception as e:  # just in case there is a bug
-                print(e)
-                zwd = None
-        else:
-            zwd = None
-        self.parent.pushSession2DB(self.sess_id, weight, weight_note, sess_note, zwd=zwd)
-        self.close()
-
-    def ignoreSess(self):
-        self.close()
-
-    def discardSess(self):
-        self.parent.discardSess(self.sess_id)
-        self.close()
-
-
-class StageDialog(QDialog):
-    def __init__(self, main, version: (str, int) = '0', stage: str = ""):
-        super(StageDialog, self).__init__(main)
-        self.log = logging.getLogger('StageWindow')
-        self.log.setLevel(logging.INFO)
-        self.path2file = Path(__file__)
-        uic.loadUi(self.path2file.parent / 'GUI' / 'Stage_dialog.ui', self)
-        if isinstance(version, int):
-            version = str(version)
-        self.VersionNr.setText(version)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        self.was_accepted = False
-        self.main = main
-
-
-        if stage:
-            self.label.setText("Create a new version with current parameters?\nfor the stage")
-            self.StageName_lineEdit.setText(stage)
-            self.StageName_lineEdit.setReadOnly(True)
-            self.label_2.setText("Description of changes to previous version:")
-            self.StageStates_plainTextEdit.deleteLater()
-            self.label_5.deleteLater()
-
-    def get_data(self):
-        self.stage_name = self.StageName_lineEdit.text()
-        self.description = self.StageDesc_plainTextEdit.toPlainText()
-        self.states = self.StageStates_plainTextEdit.toPlainText()
-
-    def accept(self):
-        self.get_data()
-        self.was_accepted = True
-        super().accept()
-
-    def reject(self):
-        self.was_accepted = False
-        super().reject()
-
 
 class QtPicoSerial(QObject):
     """Class to manage a serial connection to a CircuitPython sketch using Qt
@@ -276,28 +182,11 @@ class QtPicoSerial(QObject):
         self.write(string.encode() + b'\n')
 
 
-def populate_tree(tree_widget, data, parent_item=None):
-    for key, value in data.items():
-        if isinstance(value, dict):
-            # If the value is a dictionary, create a new top-level item
-            item = QTreeWidgetItem(tree_widget if parent_item is None else parent_item)
-            item.setText(0, str(key))
-            populate_tree(tree_widget, value, item)  # Recursively populate the sub-dictionary
-        else:
-            # If the value is not a dictionary, create a child item
-            item = QTreeWidgetItem(parent_item if parent_item is not None else tree_widget)
-            item.setText(0, str(key))
-            item.setText(1, str(value))
-
-
 if __name__ == "__main__":
     from PyQt6.QtWidgets import QApplication
     import sys
 
     app = QApplication(sys.argv)
-    myapp = StageDialog(None, stage="test")
-    myapp.show()
-    app.exec()
     print(myapp.buttonBox)
     # print which button was clicked
     # print(myapp.buttonClicked)
